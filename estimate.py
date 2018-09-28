@@ -6,151 +6,149 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from pandas import DataFrame
-from datetime import datetime
+tf.set_random_seed(777)  # reproducibility
 
 stock = sys.argv[1]
 print("Stock:", stock)
 
-prediction_label = 3 # 0 : Open, 1: High 2: Low, 3:Close 4:Volume
+def MinMaxScaler(data):
+    ''' Min Max Normalization
+    Parameters
+    ----------
+    data : numpy.ndarray
+        input data to be normalized
+        shape: [Batch size, dimension]
+    Returns
+    ----------
+    data : numpy.ndarry
+        normalized data
+        shape: [Batch size, dimension]
+    References
+    ----------
+    .. [1] http://sebastianraschka.com/Articles/2014_about_feature_scaling.html
+    '''
+    numerator = data - np.min(data, 0)
+    denominator = np.max(data, 0) - np.min(data, 0)
+    # noise term prevents the zero division
+    return numerator / (denominator + 1e-7)
 
-tf.set_random_seed(777)  # reproducibility
+# step debug Parameters
+debug_step = 10
 
 # train Parameters
 seq_length = 7
 data_dim = 5
-hidden_dim = 10
+hidden_dim = 20
 output_dim = 1
-predict_day = 1
 learning_rate = 0.01
-iterations = 1000
-LSTM_stack = 3
-add_to_denominator = 1e-7
+iterations = 2000
+LSTM_stack = 2
+output_keep_prob = 0.8
 
-def min_max_regularization(data):
-    numerator = data - np.min(data, 0)
-    denominator = np.max(data, 0) - np.min(data, 0)
-    # noise term prevents the zero division
-    return numerator / (denominator + add_to_denominator)
-
+# Date, Open, High, Low, Close, Adj Close, Volume
 df = pd.read_csv("stock/" + stock + "_stock.csv")
 df = df.drop(columns=["Date", "Adj Close"])
-
-now = datetime.now()
-year = now.year
-month = now.month
-day = now.day
-
-dataset_temp = df.values
+cols = df.columns.tolist()
+cols = cols[:3] + cols[-1:] + cols[3:4]
+df = df[cols]
 
 # Open, High, Low, Volume, Close
-test_min = np.min(dataset_temp, 0)
-test_max = np.max(dataset_temp, 0)
-test_denom = test_max - test_min
+xy = df.values
 
-dataset = min_max_regularization(dataset_temp)
+# train/test split
+train_size = int(len(xy) * 0.7)
+train_set = xy[0:train_size]
+test_set = xy[train_size - seq_length:]  # Index from [train_size - seq_length] to utilize past sequence
 
-dataset_temp = df.values
-test_last_X = (dataset_temp[-seq_length:,:] - test_min) / (test_denom + add_to_denominator)
+test_min = np.min(test_set, 0)
+test_max = np.max(test_set, 0)
+test_denominator = test_max - test_min
 
-# build a dataset
-dataX = []
-dataY = []
-dataY_temp = []
-for i in range(0, len(dataset) - seq_length - predict_day + 1):
-    _x = dataset[i:i + seq_length]
-    _y = dataset[i + predict_day:i + seq_length + predict_day]
-    # print(i + seq_length + predict_day)
-    dataX.append(_x)
-    dataY.append(_y)
+# Scale each
+train_set = MinMaxScaler(train_set)
+test_set = MinMaxScaler(test_set)
+prediction_set = test_set[-seq_length:]
 
-# train/test split 70 / 30
-train_size = int(len(dataY) * 0.7)
-test_size = len(dataY) - train_size
-trainX, testX = np.array(dataX[0:train_size]), np.array(dataX[train_size:len(dataX)])
-trainY, testY = np.array(dataY[0:train_size]), np.array(dataY[train_size:len(dataY)])
+# build datasets
+def build_dataset(time_series, seq_length):
+    dataX = []
+    dataY = []
+    for i in range(0, len(time_series) - seq_length):
+        _x = time_series[i:i + seq_length, :]
+        _y = time_series[i + seq_length, [-1]]  # Next close price
+        # print(_x, "->", _y)
+        dataX.append(_x)
+        dataY.append(_y)
+    return np.array(dataX), np.array(dataY)
+
+trainX, trainY = build_dataset(train_set, seq_length)
+testX, testY = build_dataset(test_set, seq_length)
+predictionX = [prediction_set]
 
 # input place holders
-X = tf.placeholder(tf.float32, [None, seq_length, data_dim], name="intput_X")
-Y = tf.placeholder(tf.float32, [None, 1], name="intput_Y")
+X = tf.placeholder(tf.float32, [None, seq_length, data_dim])
+Y = tf.placeholder(tf.float32, [None, 1])
 
 # build a LSTM network
 def lstm_cell():
     cell = tf.contrib.rnn.BasicLSTMCell(hidden_dim, state_is_tuple=True)
+    cell = tf.contrib.rnn.DropoutWrapper(cell, output_keep_prob=output_keep_prob)
     return cell
 
 multi_cells = tf.contrib.rnn.MultiRNNCell([lstm_cell() for _ in range(LSTM_stack)], state_is_tuple=True)
 
-outputs_rnn, _states = tf.nn.dynamic_rnn(multi_cells, X, dtype=tf.float32)
-
-X_for_fc = tf.reshape(outputs_rnn, [-1, hidden_dim])
-Y_pred_temp = tf.contrib.layers.fully_connected(X_for_fc, output_dim, activation_fn=None)
-# reshape out for sequence_loss
-Y_pred = tf.reshape(Y_pred_temp, [-1, seq_length])
+outputs, _states = tf.nn.dynamic_rnn(multi_cells, X, dtype=tf.float32)
+Y_pred = tf.contrib.layers.fully_connected(
+    outputs[:, -1], output_dim, activation_fn=None)  # We use the last cell's output
 
 # cost/loss
-mean_loss = tf.reduce_sum(tf.square(Y_pred - Y), name="losses_sum")  # sum of the squares
-optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(mean_loss)
+loss = tf.reduce_sum(tf.square(Y_pred - Y))  # sum of the squares
+# optimizer
+optimizer = tf.train.AdamOptimizer(learning_rate)
+train = optimizer.minimize(loss)
 
-trainY_label=trainY[:,[-1], prediction_label]
-testY_label=testY[:,[-1], prediction_label]
+# RMSE
+targets = tf.placeholder(tf.float32, [None, 1])
+predictions = tf.placeholder(tf.float32, [None, 1])
+rmse = tf.sqrt(tf.reduce_mean(tf.square(targets - predictions)))
 
 with tf.Session() as sess:
     init = tf.global_variables_initializer()
     sess.run(init)
 
-    # Tensorboard
-    merged = tf.summary.merge_all()
-    writer = tf.summary.FileWriter("./tensorflowlog", sess.graph)
-
-    losslist = []
     # Training step
     for i in range(iterations):
-        _, step_loss = sess.run([optimizer, mean_loss],
-                                feed_dict={X: trainX,
-                                           Y: trainY_label})
-        losslist = np.append(losslist, step_loss)
+        _, step_loss = sess.run([train, loss], feed_dict={
+            X: trainX, Y: trainY})
+        if i % debug_step == 0:
+            print("[step: {}] loss: {}".format(i, step_loss))
 
     # Test step
     test_predict = sess.run(Y_pred, feed_dict={X: testX})
+    rmse_val = sess.run(rmse, feed_dict={
+        targets: testY, predictions: test_predict})
+    print("RMSE: {}".format(rmse_val))
 
-    # Predictions test
-    prediction_test = sess.run(Y_pred, feed_dict={X: test_last_X.reshape(1, seq_length, data_dim)})
+    real_prediction = sess.run(Y_pred, feed_dict={X: predictionX})
 
-print("predictions: ", prediction_test * test_denom[prediction_label] + test_min[prediction_label])
+    print("Today Prediction:", test_predict[-1] * (test_denominator[-1] + 1e-7) + test_min[-1])
+    print("Today Real:", testY[-1] * (test_denominator[-1] + 1e-7) + test_min[-1])
+    print("Tomorrow Prediction:", real_prediction[0] * (test_denominator[-1] + 1e-7) + test_min[-1])
 
-# Plot losslist
-plt.figure(1)
-plt.plot(losslist, color="green", label="Error")
-plt.xlabel("Iteration Number")
-plt.ylabel("Sum of the Squarred Error")
-plt.legend(loc="upper right", frameon=False)
-plt.show()
+    # Plot predictions
+    plt.figure(1)
+    plt.plot(testY, label="Real")
+    plt.plot(test_predict, label="Prediction")
+    plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
+    plt.xlabel("Time Period")
+    plt.ylabel("Stock Price")
+    plt.show()
 
-predict_temp = (test_predict * test_denom[prediction_label] + test_min[prediction_label])
-predict = np.empty((test_predict.shape[0] + seq_length - 1, seq_length))
-predict[:] = np.NAN
-for i in range(0, seq_length):
-    predict[i:test_predict.shape[0] + i, i] = predict_temp[:, i]
-predict = DataFrame(predict.round())
-
-Total_size = df.values.shape[0]
-Predict_size = predict.shape[0]
-
-predict_mean = predict.mean(axis =1)
-Predict_close_concat = np.concatenate((np.zeros((Total_size - Predict_size, 1))[:, -1],
-                                     predict_mean), axis=0)
-
-df["Predict Close"] = Predict_close_concat.round()
-
-plt.figure(2)
-df.iloc[Total_size - Predict_size:, 3].plot(label="Real")
-df.iloc[Total_size - Predict_size:, 5].plot(label="Prediction")
-plt.legend(loc="upper left", frameon=False)
-plt.show()
-
-plt.figure(3)
-df.iloc[-5:,3].plot(label="Real")
-df.iloc[-5:,5].plot(label="Prediction")
-plt.legend(loc="upper left", frameon=False)
-plt.show()
+    # Plot small predictions
+    plt.figure(2)
+    plt.plot(testY[-100:], label="Real")
+    plt.plot(test_predict[-100:], label="Prediction")
+    plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
+    plt.xlabel("Time Period")
+    plt.ylabel("Stock Price")
+    plt.show()

@@ -46,7 +46,7 @@ data_dim = 5
 hidden_dim = 10
 output_dim = 1
 learning_rate = 0.01
-iterations = 2000
+iterations = 3000
 LSTM_stack = 2
 output_keep_prob = 1.0
 
@@ -116,7 +116,7 @@ train = optimizer.minimize(loss, global_step=global_step)
 
 # RMSE
 targets = tf.placeholder(tf.float32, [None, 1])
-predictions = tf.placeholder(tf.float32, [None, 1])
+predictions = tf.placeholder(tf.float32, [None, output_dim])
 rmse = tf.sqrt(tf.reduce_mean(tf.square(targets - predictions)))
 
 def get_origin_value(value):
@@ -154,12 +154,11 @@ with tf.Session() as sess:
     print("Today Real:", get_origin_value(testY[-1]))
     print("Prediction:", get_origin_value(real_prediction[0]))
 
-    # Open, High, Low, Volume, Close
     predictionTemp = np.copy(nextPredictionX[0][5])
-    predictionTemp[0] = real_prediction[0] # Set Today Prediction
-    predictionTemp[1] = real_prediction[0]
-    predictionTemp[2] = real_prediction[0]
-    predictionTemp[4] = real_prediction[0]
+    predictionTemp[0] = real_prediction[0] # Open
+    predictionTemp[1] = real_prediction[0] # High
+    predictionTemp[2] = real_prediction[0] # Low
+    predictionTemp[4] = real_prediction[0] # Close
     nextPredictionX = np.array([np.append(nextPredictionX[0], [predictionTemp], axis=0)])
     # print("nextPredictionX:", nextPredictionX)
 

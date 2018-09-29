@@ -189,12 +189,12 @@ with tf.Session() as sess:
     # default: #stock
     channel_url = "https://hooks.slack.com/services/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"
 
-    if stock == '055550.KS':
-        channel_url = 'https://hooks.slack.com/services/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'
-    elif stock == '064260.KQ':
-        channel_url = 'https://hooks.slack.com/services/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'
-    elif stock == '017670.KS':
+    if stock == '017670.KS':
         channel_url = 'https://hooks.slack.com/services/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'
+    elif stock == '055550.KS':
+        channel_url = 'https://hooks.slack.com/services/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'
+    elif stock == '035420.KS':
+        channel_url = 'https://hooks.slack.com/services/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'
 
     requests.post(channel_url, data=json.dumps({'text':result_text}))
 

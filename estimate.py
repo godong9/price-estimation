@@ -8,6 +8,8 @@ import pandas as pd
 
 tf.set_random_seed(777)  # reproducibility
 
+global_step = tf.Variable(0, trainable=False, name='global_step')
+
 stock = sys.argv[1]
 print("Stock:", stock)
 
@@ -34,6 +36,9 @@ def MinMaxScaler(data):
 
 # step debug Parameters
 debug_step = 100
+
+# -1:Close, -2:Volume, -3:Low, -4:High, -5:Open
+prediction_label = -1
 
 # train Parameters
 seq_length = 7
@@ -75,7 +80,7 @@ def build_dataset(time_series, seq_length):
     dataY = []
     for i in range(0, len(time_series) - seq_length):
         _x = time_series[i:i + seq_length, :]
-        _y = time_series[i + seq_length, [-1]]  # Next close price
+        _y = time_series[i + seq_length, [prediction_label]]  # Next prediction_label
         # print(_x, "->", _y)
         dataX.append(_x)
         dataY.append(_y)
@@ -105,50 +110,60 @@ Y_pred = tf.contrib.layers.fully_connected(
 loss = tf.reduce_sum(tf.square(Y_pred - Y))  # sum of the squares
 # optimizer
 optimizer = tf.train.AdamOptimizer(learning_rate)
-train = optimizer.minimize(loss)
+train = optimizer.minimize(loss, global_step=global_step)
 
 # RMSE
 targets = tf.placeholder(tf.float32, [None, 1])
 predictions = tf.placeholder(tf.float32, [None, 1])
 rmse = tf.sqrt(tf.reduce_mean(tf.square(targets - predictions)))
 
-with tf.Session() as sess:
-    init = tf.global_variables_initializer()
-    sess.run(init)
+sess = tf.Session()
+saver = tf.train.Saver(tf.global_variables())
 
-    # Training step
-    for i in range(iterations):
-        _, step_loss = sess.run([train, loss], feed_dict={
-            X: trainX, Y: trainY})
-        if i % debug_step == 0:
-            print("[step: {}] loss: {}".format(i, step_loss))
+ckpt = tf.train.get_checkpoint_state('./model')
+if ckpt and tf.train.checkpoint_exists(ckpt.model_checkpoint_path):
+    saver.restore(sess, ckpt.model_checkpoint_path)
+    iterations = 0
+else:
+    sess.run(tf.global_variables_initializer())
 
-    # Test step
-    test_predict = sess.run(Y_pred, feed_dict={X: testX})
-    rmse_val = sess.run(rmse, feed_dict={
-        targets: testY, predictions: test_predict})
-    print("RMSE: {}".format(rmse_val))
+# Training step
+for i in range(iterations):
+    _, step_loss = sess.run([train, loss], feed_dict={
+        X: trainX, Y: trainY})
+    if i % debug_step == 0:
+        print("[step: {}] loss: {}".format(i, step_loss))
 
-    real_prediction = sess.run(Y_pred, feed_dict={X: predictionX})
+# Test step
+test_predict = sess.run(Y_pred, feed_dict={X: testX})
+rmse_val = sess.run(rmse, feed_dict={
+    targets: testY, predictions: test_predict})
+print("RMSE: {}".format(rmse_val))
 
-    print("Today Prediction:", test_predict[-1] * (test_denominator[-1] + 1e-7) + test_min[-1])
-    print("Today Real:", testY[-1] * (test_denominator[-1] + 1e-7) + test_min[-1])
-    print("Tomorrow Prediction:", real_prediction[0] * (test_denominator[-1] + 1e-7) + test_min[-1])
+saver.save(sess, './model/estimate.ckpt', global_step=global_step)
 
-    # Plot predictions
-    plt.figure(1)
-    plt.plot(testY, label="Real")
-    plt.plot(test_predict, label="Prediction")
-    plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
-    plt.xlabel("Time Period")
-    plt.ylabel("Stock Price")
-    plt.show()
+real_prediction = sess.run(Y_pred, feed_dict={X: predictionX})
 
-    # Plot small predictions
-    plt.figure(2)
-    plt.plot(testY[-100:], label="Real")
-    plt.plot(test_predict[-100:], label="Prediction")
-    plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
-    plt.xlabel("Time Period")
-    plt.ylabel("Stock Price")
-    plt.show()
+print("Today Prediction:", test_predict[-1] * (test_denominator[prediction_label] + 1e-7) + test_min[prediction_label])
+print("Today Real:", testY[-1] * (test_denominator[prediction_label] + 1e-7) + test_min[prediction_label])
+print("Prediction:", real_prediction[0] * (test_denominator[prediction_label] + 1e-7) + test_min[prediction_label])
+
+# Plot predictions
+plt.figure(1)
+plt.plot(testY, label="Real")
+plt.plot(test_predict, label="Prediction")
+plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
+plt.xlabel("Time Period")
+plt.ylabel("Stock Price")
+plt.show()
+
+# Plot small predictions
+plt.figure(2)
+plt.plot(testY[-100:], label="Real")
+plt.plot(test_predict[-100:], label="Prediction")
+plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
+plt.xlabel("Time Period")
+plt.ylabel("Stock Price")
+plt.show()
+
+sess.close()

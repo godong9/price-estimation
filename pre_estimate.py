@@ -12,7 +12,7 @@ from datetime import datetime
 stock = sys.argv[1]
 print("Stock:", stock)
 
-prediction_label = 3 # 0 : Open, 1: High 2: Low, 3:Close 4:Volume
+prediction_label = 4 # 0 : Open, 1: High 2: Low, 3:Close 4:Volume
 
 tf.set_random_seed(777)  # reproducibility
 

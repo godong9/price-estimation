@@ -52,7 +52,7 @@ data_dim = 5
 hidden_dim = 10
 output_dim = 1
 learning_rate = 0.01
-iterations = 3000
+iterations = 2000
 LSTM_stack = 2
 output_keep_prob = 1.0
 
@@ -159,9 +159,12 @@ with tf.Session() as sess:
     now =  datetime.now().strftime('%Y-%m-%d')
 
     result_text = '======== [%s] %s ========\n' % (now, stock)
+    result_text += 'Model RMSE: %.5f\n' % rmse_val
     result_text += 'Today Prediction: %.1f\n' % get_origin_value(test_predict[-1])
     result_text += 'Today Real: %.1f\n' % get_origin_value(testY[-1])
-    result_text += 'Prediction: %.1f\n' % get_origin_value(real_prediction[0])
+
+    prediction_origin_value = get_origin_value(real_prediction[0])
+    result_text += 'Prediction: %.1f\n' % prediction_origin_value
 
     predictionTemp = np.copy(nextPredictionX[0][5])
     predictionTemp[0] = real_prediction[0] # Open
@@ -172,12 +175,20 @@ with tf.Session() as sess:
     # print('nextPredictionX:', nextPredictionX)
 
     next_prediction = sess.run(Y_pred, feed_dict={X: nextPredictionX})
-    result_text += 'Next Day Prediction: %.1f\n' % get_origin_value(next_prediction[0])
+
+    next_prediction_origin_value = get_origin_value(next_prediction[0])
+    result_text += 'Next Day Prediction: %.1f\n' % next_prediction_origin_value
+
+    change_ratio = (next_prediction_origin_value - prediction_origin_value) / prediction_origin_value * 100
+    result_text += 'Prediction ratio: %.1f%%\n' % change_ratio
+
     result_text += '=' * 40
 
     print(result_text)
 
+    # default: #stock
     channel_url = "https://hooks.slack.com/services/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"
+
     if stock == '055550.KS':
         channel_url = 'https://hooks.slack.com/services/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'
     elif stock == '064260.KQ':

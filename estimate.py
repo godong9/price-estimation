@@ -3,15 +3,21 @@
 import sys
 import tensorflow as tf
 import numpy as np
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 import pandas as pd
+import requests
+import json
+
+from datetime import datetime
 
 tf.set_random_seed(777)  # reproducibility
 
 global_step = tf.Variable(0, trainable=False, name='global_step')
 
+print('========== [Estimate] start! ==========')
+
 stock = sys.argv[1]
-print("Stock:", stock)
+print('Stock:', stock)
 
 def MinMaxScaler(data):
     ''' Min Max Normalization
@@ -51,8 +57,8 @@ LSTM_stack = 2
 output_keep_prob = 1.0
 
 # Date, Open, High, Low, Close, Adj Close, Volume
-df = pd.read_csv("stock/" + stock + "_stock.csv")
-df = df.drop(columns=["Date", "Adj Close"])
+df = pd.read_csv('stock/' + stock + '_stock.csv')
+df = df.drop(columns=['Date', 'Adj Close'])
 cols = df.columns.tolist()
 cols = cols[:3] + cols[-1:] + cols[3:4]
 df = df[cols]
@@ -82,7 +88,7 @@ def build_dataset(time_series, seq_length):
     for i in range(0, len(time_series) - seq_length):
         _x = time_series[i:i + seq_length, :]
         _y = time_series[i + seq_length, [prediction_label]]  # Next prediction_label
-        # print(_x, "->", _y)
+        # print(_x, '->', _y)
         dataX.append(_x)
         dataY.append(_y)
     return np.array(dataX), np.array(dataY)
@@ -138,21 +144,24 @@ with tf.Session() as sess:
             X: trainX, Y: trainY})
         global_step_val = sess.run(global_step)
         if global_step_val % debug_step == 0:
-            print("[step: {}] loss: {}".format(global_step_val, step_loss))
+            print('[step: {}] loss: {}'.format(global_step_val, step_loss))
 
     # Test step
     test_predict = sess.run(Y_pred, feed_dict={X: testX})
     rmse_val = sess.run(rmse, feed_dict={
         targets: testY, predictions: test_predict})
-    print("RMSE: {}".format(rmse_val))
+    print('RMSE: {}'.format(rmse_val))
 
-    saver.save(sess, './model/estimate.ckpt', global_step=global_step)
+    # Not save model
+    # saver.save(sess, './model/estimate.ckpt', global_step=global_step)
 
     real_prediction = sess.run(Y_pred, feed_dict={X: predictionX})
+    now =  datetime.now().strftime('%Y-%m-%d')
 
-    print("Today Prediction:", get_origin_value(test_predict[-1]))
-    print("Today Real:", get_origin_value(testY[-1]))
-    print("Prediction:", get_origin_value(real_prediction[0]))
+    result_text = '======== [%s] %s ========\n' % (now, stock)
+    result_text += 'Today Prediction: %.1f\n' % get_origin_value(test_predict[-1])
+    result_text += 'Today Real: %.1f\n' % get_origin_value(testY[-1])
+    result_text += 'Prediction: %.1f\n' % get_origin_value(real_prediction[0])
 
     predictionTemp = np.copy(nextPredictionX[0][5])
     predictionTemp[0] = real_prediction[0] # Open
@@ -160,25 +169,40 @@ with tf.Session() as sess:
     predictionTemp[2] = real_prediction[0] # Low
     predictionTemp[4] = real_prediction[0] # Close
     nextPredictionX = np.array([np.append(nextPredictionX[0], [predictionTemp], axis=0)])
-    # print("nextPredictionX:", nextPredictionX)
+    # print('nextPredictionX:', nextPredictionX)
 
     next_prediction = sess.run(Y_pred, feed_dict={X: nextPredictionX})
-    print("Next Prediction:", get_origin_value(next_prediction[0]))
+    result_text += 'Next Day Prediction: %.1f\n' % get_origin_value(next_prediction[0])
+    result_text += '=' * 40
 
-    # Plot predictions
-    plt.figure(1)
-    plt.plot(testY, label="Real")
-    plt.plot(test_predict, label="Prediction")
-    plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
-    plt.xlabel("Time Period")
-    plt.ylabel("Stock Price")
-    plt.show()
+    print(result_text)
 
-    # Plot small predictions
-    plt.figure(2)
-    plt.plot(testY[-100:], label="Real")
-    plt.plot(test_predict[-100:], label="Prediction")
-    plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
-    plt.xlabel("Time Period")
-    plt.ylabel("Stock Price")
-    plt.show()
+    channel_url = "https://hooks.slack.com/services/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"
+    if stock == '055550.KS':
+        channel_url = 'https://hooks.slack.com/services/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'
+    elif stock == '064260.KQ':
+        channel_url = 'https://hooks.slack.com/services/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'
+    elif stock == '017670.KS':
+        channel_url = 'https://hooks.slack.com/services/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'
+
+    requests.post(channel_url, data=json.dumps({'text':result_text}))
+
+    print('========== [Estimate] complete! ==========')
+
+    # # Plot predictions
+    # plt.figure(1)
+    # plt.plot(testY, label='Real')
+    # plt.plot(test_predict, label='Prediction')
+    # plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
+    # plt.xlabel('Time Period')
+    # plt.ylabel('Stock Price')
+    # plt.show()
+    #
+    # # Plot small predictions
+    # plt.figure(2)
+    # plt.plot(testY[-100:], label='Real')
+    # plt.plot(test_predict[-100:], label='Prediction')
+    # plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
+    # plt.xlabel('Time Period')
+    # plt.ylabel('Stock Price')
+    # plt.show()

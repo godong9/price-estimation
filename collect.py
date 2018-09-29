@@ -7,6 +7,8 @@ from datetime import datetime
 
 stock = sys.argv[1]
 
+print("========== [Collect] start! ==========")
+
 print("Stock:", stock)
 
 start = "2000-01-01"
@@ -18,3 +20,5 @@ print("end:", end)
 data = yf.download(stock, start=start, end=end)
 
 data.to_csv("stock/" + stock + "_stock.csv")
+
+print("========== [Collect] complete! ==========")

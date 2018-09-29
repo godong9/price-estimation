@@ -73,6 +73,7 @@ test_denominator = test_max - test_min
 train_set = MinMaxScaler(train_set)
 test_set = MinMaxScaler(test_set)
 prediction_set = test_set[-seq_length:]
+next_prediction_set = test_set[-(seq_length - 1):]
 
 # build datasets
 def build_dataset(time_series, seq_length):
@@ -88,7 +89,8 @@ def build_dataset(time_series, seq_length):
 
 trainX, trainY = build_dataset(train_set, seq_length)
 testX, testY = build_dataset(test_set, seq_length)
-predictionX = [prediction_set]
+predictionX = np.array([prediction_set])
+nextPredictionX = np.array([next_prediction_set])
 
 # input place holders
 X = tf.placeholder(tf.float32, [None, seq_length, data_dim])
@@ -116,6 +118,9 @@ train = optimizer.minimize(loss, global_step=global_step)
 targets = tf.placeholder(tf.float32, [None, 1])
 predictions = tf.placeholder(tf.float32, [None, 1])
 rmse = tf.sqrt(tf.reduce_mean(tf.square(targets - predictions)))
+
+def get_origin_value(value):
+    return value * (test_denominator[prediction_label] + 1e-7) + test_min[prediction_label]
 
 with tf.Session() as sess:
     saver = tf.train.Saver(tf.global_variables())
@@ -145,9 +150,21 @@ with tf.Session() as sess:
 
     real_prediction = sess.run(Y_pred, feed_dict={X: predictionX})
 
-    print("Today Prediction:", test_predict[-1] * (test_denominator[prediction_label] + 1e-7) + test_min[prediction_label])
-    print("Today Real:", testY[-1] * (test_denominator[prediction_label] + 1e-7) + test_min[prediction_label])
-    print("Prediction:", real_prediction[0] * (test_denominator[prediction_label] + 1e-7) + test_min[prediction_label])
+    print("Today Prediction:", get_origin_value(test_predict[-1]))
+    print("Today Real:", get_origin_value(testY[-1]))
+    print("Prediction:", get_origin_value(real_prediction[0]))
+
+    # Open, High, Low, Volume, Close
+    predictionTemp = np.copy(nextPredictionX[0][5])
+    predictionTemp[0] = real_prediction[0] # Set Today Prediction
+    predictionTemp[1] = real_prediction[0]
+    predictionTemp[2] = real_prediction[0]
+    predictionTemp[4] = real_prediction[0]
+    nextPredictionX = np.array([np.append(nextPredictionX[0], [predictionTemp], axis=0)])
+    # print("nextPredictionX:", nextPredictionX)
+
+    next_prediction = sess.run(Y_pred, feed_dict={X: nextPredictionX})
+    print("Next Prediction:", get_origin_value(next_prediction[0]))
 
     # Plot predictions
     plt.figure(1)

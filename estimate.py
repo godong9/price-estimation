@@ -33,17 +33,17 @@ def MinMaxScaler(data):
     return numerator / (denominator + 1e-7)
 
 # step debug Parameters
-debug_step = 10
+debug_step = 100
 
 # train Parameters
 seq_length = 7
 data_dim = 5
-hidden_dim = 20
+hidden_dim = 10
 output_dim = 1
 learning_rate = 0.01
 iterations = 2000
 LSTM_stack = 2
-output_keep_prob = 0.8
+output_keep_prob = 1.0
 
 # Date, Open, High, Low, Close, Adj Close, Volume
 df = pd.read_csv("stock/" + stock + "_stock.csv")

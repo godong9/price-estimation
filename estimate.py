@@ -117,53 +117,52 @@ targets = tf.placeholder(tf.float32, [None, 1])
 predictions = tf.placeholder(tf.float32, [None, 1])
 rmse = tf.sqrt(tf.reduce_mean(tf.square(targets - predictions)))
 
-sess = tf.Session()
-saver = tf.train.Saver(tf.global_variables())
+with tf.Session() as sess:
+    saver = tf.train.Saver(tf.global_variables())
 
-ckpt = tf.train.get_checkpoint_state('./model')
-if ckpt and tf.train.checkpoint_exists(ckpt.model_checkpoint_path):
-    saver.restore(sess, ckpt.model_checkpoint_path)
-    iterations = 0
-else:
-    sess.run(tf.global_variables_initializer())
+    ckpt = tf.train.get_checkpoint_state('./model')
+    if ckpt and tf.train.checkpoint_exists(ckpt.model_checkpoint_path):
+        saver.restore(sess, ckpt.model_checkpoint_path)
+        iterations = 0
+    else:
+        sess.run(tf.global_variables_initializer())
 
-# Training step
-for i in range(iterations):
-    _, step_loss = sess.run([train, loss], feed_dict={
-        X: trainX, Y: trainY})
-    if i % debug_step == 0:
-        print("[step: {}] loss: {}".format(i, step_loss))
+    # Training step
+    for i in range(iterations):
+        _, step_loss = sess.run([train, loss], feed_dict={
+            X: trainX, Y: trainY})
+        global_step_val = sess.run(global_step)
+        if global_step_val % debug_step == 0:
+            print("[step: {}] loss: {}".format(global_step_val, step_loss))
 
-# Test step
-test_predict = sess.run(Y_pred, feed_dict={X: testX})
-rmse_val = sess.run(rmse, feed_dict={
-    targets: testY, predictions: test_predict})
-print("RMSE: {}".format(rmse_val))
+    # Test step
+    test_predict = sess.run(Y_pred, feed_dict={X: testX})
+    rmse_val = sess.run(rmse, feed_dict={
+        targets: testY, predictions: test_predict})
+    print("RMSE: {}".format(rmse_val))
 
-saver.save(sess, './model/estimate.ckpt', global_step=global_step)
+    saver.save(sess, './model/estimate.ckpt', global_step=global_step)
 
-real_prediction = sess.run(Y_pred, feed_dict={X: predictionX})
+    real_prediction = sess.run(Y_pred, feed_dict={X: predictionX})
 
-print("Today Prediction:", test_predict[-1] * (test_denominator[prediction_label] + 1e-7) + test_min[prediction_label])
-print("Today Real:", testY[-1] * (test_denominator[prediction_label] + 1e-7) + test_min[prediction_label])
-print("Prediction:", real_prediction[0] * (test_denominator[prediction_label] + 1e-7) + test_min[prediction_label])
+    print("Today Prediction:", test_predict[-1] * (test_denominator[prediction_label] + 1e-7) + test_min[prediction_label])
+    print("Today Real:", testY[-1] * (test_denominator[prediction_label] + 1e-7) + test_min[prediction_label])
+    print("Prediction:", real_prediction[0] * (test_denominator[prediction_label] + 1e-7) + test_min[prediction_label])
 
-# Plot predictions
-plt.figure(1)
-plt.plot(testY, label="Real")
-plt.plot(test_predict, label="Prediction")
-plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
-plt.xlabel("Time Period")
-plt.ylabel("Stock Price")
-plt.show()
+    # Plot predictions
+    plt.figure(1)
+    plt.plot(testY, label="Real")
+    plt.plot(test_predict, label="Prediction")
+    plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
+    plt.xlabel("Time Period")
+    plt.ylabel("Stock Price")
+    plt.show()
 
-# Plot small predictions
-plt.figure(2)
-plt.plot(testY[-100:], label="Real")
-plt.plot(test_predict[-100:], label="Prediction")
-plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
-plt.xlabel("Time Period")
-plt.ylabel("Stock Price")
-plt.show()
-
-sess.close()
+    # Plot small predictions
+    plt.figure(2)
+    plt.plot(testY[-100:], label="Real")
+    plt.plot(test_predict[-100:], label="Prediction")
+    plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
+    plt.xlabel("Time Period")
+    plt.ylabel("Stock Price")
+    plt.show()

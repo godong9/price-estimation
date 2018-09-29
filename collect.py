@@ -17,8 +17,11 @@ end =  datetime.now().strftime("%Y-%m-%d")
 print("start:", start)
 print("end:", end)
 
-data = yf.download(stock, start=start, end=end)
+try:
+    data = yf.download(stock, start=start, end=end)
+    data.to_csv("stock/" + stock + "_stock.csv")
 
-data.to_csv("stock/" + stock + "_stock.csv")
+except Exception as e:
+    print(e)
 
 print("========== [Collect] complete! ==========")

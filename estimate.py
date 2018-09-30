@@ -16,8 +16,8 @@ global_step = tf.Variable(0, trainable=False, name='global_step')
 
 print('========== [Estimate] start! ==========')
 
-stock = sys.argv[1]
-print('Stock:', stock)
+code = sys.argv[1]
+print('code:', code)
 
 def MinMaxScaler(data):
     ''' Min Max Normalization
@@ -49,15 +49,15 @@ prediction_label = -1
 # train Parameters
 seq_length = 7
 data_dim = 5
-hidden_dim = 10
+hidden_dim = 20
 output_dim = 1
 learning_rate = 0.01
-iterations = 2000
+iterations = 3000
 LSTM_stack = 2
 output_keep_prob = 1.0
 
 # Date, Open, High, Low, Volume, Close
-df = pd.read_csv('stock/' + stock + '_stock.csv')
+df = pd.read_csv('data/' + code + '.csv')
 df = df.drop(columns=['Date'])
 
 # Open, High, Low, Volume, Close
@@ -150,15 +150,15 @@ with tf.Session() as sess:
     print('RMSE: {}'.format(rmse_val))
 
     # Not save model
-    # saver.save(sess, './model/estimate.ckpt', global_step=global_step)
+    # saver.save(sess, './model/model.ckpt', global_step=global_step)
 
     real_prediction = sess.run(Y_pred, feed_dict={X: predictionX})
     now =  datetime.now().strftime('%Y-%m-%d')
 
-    result_text = '======== [%s] %s ========\n' % (now, stock)
+    result_text = '======== [%s] %s ========\n' % (now, code)
     result_text += 'Model RMSE: %.5f\n' % rmse_val
-    result_text += 'Today Prediction: %.1f\n' % get_origin_value(test_predict[-1])
-    result_text += 'Today Real: %.1f\n' % get_origin_value(testY[-1])
+    result_text += 'Final Data Prediction: %.1f\n' % get_origin_value(test_predict[-1])
+    result_text += 'Final Data Real: %.1f\n' % get_origin_value(testY[-1])
 
     prediction_origin_value = get_origin_value(real_prediction[0])
     result_text += 'Prediction: %.1f\n' % prediction_origin_value
@@ -174,10 +174,10 @@ with tf.Session() as sess:
     next_prediction = sess.run(Y_pred, feed_dict={X: nextPredictionX})
 
     next_prediction_origin_value = get_origin_value(next_prediction[0])
-    result_text += 'Next Day Prediction: %.1f\n' % next_prediction_origin_value
+    result_text += 'Next Prediction: %.1f\n' % next_prediction_origin_value
 
     change_ratio = (next_prediction_origin_value - prediction_origin_value) / prediction_origin_value * 100
-    result_text += 'Prediction ratio: %.1f%%\n' % change_ratio
+    result_text += 'Prediction ratio: %.2f%%\n' % change_ratio
 
     result_text += '=' * 35
 
@@ -186,13 +186,14 @@ with tf.Session() as sess:
     # default: #stock
     channel_url = "https://hooks.slack.com/services/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"
 
-    if stock == '017670':
+    if code == '017670':
         channel_url = 'https://hooks.slack.com/services/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'
-    elif stock == '055550':
+    elif code == '055550':
         channel_url = 'https://hooks.slack.com/services/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'
-    elif stock == '035420':
+    elif code == '035420':
         channel_url = 'https://hooks.slack.com/services/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'
-
+    elif code == 'ETH':
+        channel_url = 'https://hooks.slack.com/services/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'
     requests.post(channel_url, data=json.dumps({'text':result_text}))
 
     print('========== [Estimate] complete! ==========')
@@ -203,7 +204,7 @@ with tf.Session() as sess:
     plt.plot(test_predict, label='Prediction')
     plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
     plt.xlabel('Time Period')
-    plt.ylabel('Stock Price')
+    plt.ylabel('Code Price')
     plt.show()
 
     # Plot small predictions
@@ -212,5 +213,5 @@ with tf.Session() as sess:
     plt.plot(test_predict[-100:], label='Prediction')
     plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
     plt.xlabel('Time Period')
-    plt.ylabel('Stock Price')
+    plt.ylabel('Code Price')
     plt.show()

@@ -30,6 +30,7 @@ df = pd.DataFrame()
 for page in range(1, 400):
     sleep(uniform(0.1, 0.5))
     pg_url = '{url}&page={page}'.format(url=url, page=page)
+    print("Data url = {}".format(pg_url))
     df = df.append(pd.read_html(pg_url, header=0)[0], ignore_index=True)
 
 # df.dropna()를 이용해 결측값 있는 행 제거
@@ -51,6 +52,6 @@ df = df[cols]
 
 print(df.head())
 
-df.to_csv("stock/" + stock + "_stock.csv", index=False)
+df.to_csv("data/" + stock + ".csv", index=False)
 
 print("========== [Collect] complete! ==========")

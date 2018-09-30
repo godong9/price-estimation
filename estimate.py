@@ -3,7 +3,7 @@
 import sys
 import tensorflow as tf
 import numpy as np
-# import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 import pandas as pd
 import requests
 import json
@@ -56,12 +56,9 @@ iterations = 2000
 LSTM_stack = 2
 output_keep_prob = 1.0
 
-# Date, Open, High, Low, Close, Adj Close, Volume
+# Date, Open, High, Low, Volume, Close
 df = pd.read_csv('stock/' + stock + '_stock.csv')
-df = df.drop(columns=['Date', 'Adj Close'])
-cols = df.columns.tolist()
-cols = cols[:3] + cols[-1:] + cols[3:4]
-df = df[cols]
+df = df.drop(columns=['Date'])
 
 # Open, High, Low, Volume, Close
 xy = df.values
@@ -182,38 +179,38 @@ with tf.Session() as sess:
     change_ratio = (next_prediction_origin_value - prediction_origin_value) / prediction_origin_value * 100
     result_text += 'Prediction ratio: %.1f%%\n' % change_ratio
 
-    result_text += '=' * 40
+    result_text += '=' * 35
 
     print(result_text)
 
     # default: #stock
     channel_url = "https://hooks.slack.com/services/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"
 
-    if stock == '017670.KS':
+    if stock == '017670':
         channel_url = 'https://hooks.slack.com/services/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'
-    elif stock == '055550.KS':
+    elif stock == '055550':
         channel_url = 'https://hooks.slack.com/services/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'
-    elif stock == '035420.KS':
+    elif stock == '035420':
         channel_url = 'https://hooks.slack.com/services/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'
 
     requests.post(channel_url, data=json.dumps({'text':result_text}))
 
     print('========== [Estimate] complete! ==========')
 
-    # # Plot predictions
-    # plt.figure(1)
-    # plt.plot(testY, label='Real')
-    # plt.plot(test_predict, label='Prediction')
-    # plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
-    # plt.xlabel('Time Period')
-    # plt.ylabel('Stock Price')
-    # plt.show()
-    #
-    # # Plot small predictions
-    # plt.figure(2)
-    # plt.plot(testY[-100:], label='Real')
-    # plt.plot(test_predict[-100:], label='Prediction')
-    # plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
-    # plt.xlabel('Time Period')
-    # plt.ylabel('Stock Price')
-    # plt.show()
+    # Plot predictions
+    plt.figure(1)
+    plt.plot(testY, label='Real')
+    plt.plot(test_predict, label='Prediction')
+    plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
+    plt.xlabel('Time Period')
+    plt.ylabel('Stock Price')
+    plt.show()
+
+    # Plot small predictions
+    plt.figure(2)
+    plt.plot(testY[-100:], label='Real')
+    plt.plot(test_predict[-100:], label='Prediction')
+    plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
+    plt.xlabel('Time Period')
+    plt.ylabel('Stock Price')
+    plt.show()

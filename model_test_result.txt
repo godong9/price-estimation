@@ -1,0 +1,119 @@
+# Default
+seq_length = 7
+data_dim = 5
+hidden_dim = 10
+output_dim = 1
+learning_rate = 0.01
+iterations = 2000
+LSTM_stack = 1
+output_keep_prob = 1.0
+
+=> RMSE: 0.03369543328881264
+
+# 1
+seq_length = 7
+data_dim = 5
+hidden_dim = 20
+output_dim = 1
+learning_rate = 0.01
+iterations = 2000
+LSTM_stack = 3
+output_keep_prob = 0.8
+
+=> RMSE: 0.04186445102095604
+
+# 2
+seq_length = 7
+data_dim = 5
+hidden_dim = 10
+output_dim = 1
+learning_rate = 0.01
+iterations = 1000
+LSTM_stack = 3
+output_keep_prob = 0.8
+
+=> RMSE: 0.05861137807369232
+
+# 3
+seq_length = 7
+data_dim = 5
+hidden_dim = 10
+output_dim = 1
+learning_rate = 0.01
+iterations = 1000
+LSTM_stack = 2
+output_keep_prob = 0.8
+
+=> RMSE: 0.05267658457159996
+
+# 4
+seq_length = 7
+data_dim = 5
+hidden_dim = 10
+output_dim = 1
+learning_rate = 0.01
+iterations = 1000
+LSTM_stack = 1
+output_keep_prob = 1.0
+
+=> RMSE: 0.03730107843875885
+
+# 5
+seq_length = 7
+data_dim = 5
+hidden_dim = 10
+output_dim = 1
+learning_rate = 0.01
+iterations = 1000
+LSTM_stack = 2
+output_keep_prob = 1.0
+
+=> RMSE: 0.033396072685718536
+
+# 6 -> BEST
+seq_length = 7
+data_dim = 5
+hidden_dim = 10
+output_dim = 1
+learning_rate = 0.01
+iterations = 2000
+LSTM_stack = 2
+output_keep_prob = 1.0
+
+=> RMSE: 0.032080378383398056
+
+# 7
+seq_length = 7
+data_dim = 5
+hidden_dim = 10
+output_dim = 1
+learning_rate = 0.01
+iterations = 2000
+LSTM_stack = 3
+output_keep_prob = 1.0
+
+=> RMSE: 0.03283805400133133
+
+# 8
+seq_length = 7
+data_dim = 5
+hidden_dim = 10
+output_dim = 1
+learning_rate = 0.01
+iterations = 2500
+LSTM_stack = 2
+output_keep_prob = 1.0
+
+=> RMSE: 0.03211682289838791
+
+# 8
+seq_length = 7
+data_dim = 5
+hidden_dim = 10
+output_dim = 1
+learning_rate = 0.01
+iterations = 3000
+LSTM_stack = 3
+output_keep_prob = 1.0
+
+=> RMSE: 0.0324828177690506

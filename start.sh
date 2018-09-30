@@ -1,14 +1,12 @@
 #!/usr/bin/env bash
 
 # SKT, Sinhan, Naver
-stocks=(017670.KS 055550.KS 035420.KS)
+stocks=(017670 055550 035420)
 for stock in ${stocks[*]}
 do
     # Collect stock data
-    python3 collect.py $stock
+    python3 stock.py $stock
 
     # Estimate stock
     python3 estimate.py $stock
 done
-
-

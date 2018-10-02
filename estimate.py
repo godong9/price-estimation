@@ -49,11 +49,11 @@ prediction_label = -1
 # train Parameters
 seq_length = 7
 data_dim = 5
-hidden_dim = 20
+hidden_dim = 10
 output_dim = 1
 learning_rate = 0.01
 iterations = 4000
-LSTM_stack = 1
+LSTM_stack = 2
 output_keep_prob = 1.0
 
 # Date, Open, High, Low, Volume, Close

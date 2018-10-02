@@ -10,9 +10,3 @@ do
     # Estimate stock
     python3 estimate.py $stock
 done
-
-# Collect coin data
-python3 coin.py ETH
-
-# Estimate coin
-python3 estimate.py ETH

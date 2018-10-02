@@ -3,7 +3,7 @@
 import sys
 import tensorflow as tf
 import numpy as np
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 import pandas as pd
 import requests
 import json

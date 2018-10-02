@@ -198,20 +198,20 @@ with tf.Session() as sess:
 
     print('========== [Estimate] complete! ==========')
 
-    # Plot predictions
-    plt.figure(1)
-    plt.plot(testY, label='Real')
-    plt.plot(test_predict, label='Prediction')
-    plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
-    plt.xlabel('Time Period')
-    plt.ylabel('Code Price')
-    plt.show()
-
-    # Plot small predictions
-    plt.figure(2)
-    plt.plot(testY[-100:], label='Real')
-    plt.plot(test_predict[-100:], label='Prediction')
-    plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
-    plt.xlabel('Time Period')
-    plt.ylabel('Code Price')
-    plt.show()
+    # # Plot predictions
+    # plt.figure(1)
+    # plt.plot(testY, label='Real')
+    # plt.plot(test_predict, label='Prediction')
+    # plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
+    # plt.xlabel('Time Period')
+    # plt.ylabel('Code Price')
+    # plt.show()
+    #
+    # # Plot small predictions
+    # plt.figure(2)
+    # plt.plot(testY[-100:], label='Real')
+    # plt.plot(test_predict[-100:], label='Prediction')
+    # plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
+    # plt.xlabel('Time Period')
+    # plt.ylabel('Code Price')
+    # plt.show()

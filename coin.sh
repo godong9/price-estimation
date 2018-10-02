@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Collect coin data
-python3 coin.py ETH
+node coin.js ETH
 
 # Estimate coin
 python3 estimate.py ETH

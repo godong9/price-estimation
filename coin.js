@@ -8,8 +8,8 @@ const count = 24; // 60분 -> 24개, 10분 -> 144개
 const startDate = '2018-01-01';
 
 async function getPriceData(coin, date) {
-  const reuslt = await axios.get(`https://crix-api-endpoint.upbit.com/v1/crix/candles/minutes/${minutes}?code=CRIX.UPBIT.KRW-${coin}&count=${count}&to=${date}%2000:00:00`);
-  return reuslt.data;
+  const result = await axios.get(`https://crix-api-endpoint.upbit.com/v1/crix/candles/minutes/${minutes}?code=CRIX.UPBIT.KRW-${coin}&count=${count}&to=${date}%2000:00:00`);
+  return result.data;
 }
 
 async function writeData(coin, dataList) {

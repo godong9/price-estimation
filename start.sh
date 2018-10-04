@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-# SKT, Sinhan, Naver
-stocks=(017670 055550 035420)
+# SKT, Sinhan, Naver, LG Chem, CGV, JYP
+stocks=(017670 055550 035420 051910 079160 035900)
 for stock in ${stocks[*]}
 do
     # Collect stock data

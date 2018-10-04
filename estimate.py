@@ -186,12 +186,18 @@ with tf.Session() as sess:
     # default: #stock
     channel_url = "https://hooks.slack.com/services/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"
 
-    if code == '017670':
+    if code == '017670': # skt
         channel_url = 'https://hooks.slack.com/services/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'
-    elif code == '055550':
+    elif code == '055550': # shinhan
         channel_url = 'https://hooks.slack.com/services/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'
-    elif code == '035420':
+    elif code == '035420': # naver
         channel_url = 'https://hooks.slack.com/services/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'
+    elif code == '079160': # cjcgv
+        channel_url = 'https://hooks.slack.com/services/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'
+    elif code == '051910': # lgchem
+        channel_url = 'https://hooks.slack.com/services/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'
+    elif code == '035900': # jyp
+        channel_url = 'https://hooks.slack.com/services/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'
     elif code == 'ETH':
         channel_url = 'https://hooks.slack.com/services/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'
     requests.post(channel_url, data=json.dumps({'text':result_text}))

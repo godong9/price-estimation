@@ -50,7 +50,7 @@ cols = df.columns.tolist()
 cols = cols[0:1] + cols[2:6] + cols[1:2]
 df = df[cols]
 
-print(df.head())
+print(df.tail())
 
 df.to_csv("data/" + stock + ".csv", index=False)
 

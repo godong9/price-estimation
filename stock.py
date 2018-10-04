@@ -41,7 +41,7 @@ df = df.rename(columns= {'날짜': 'Date', '종가': 'Close', '전일비': 'Diff
 df[['Close', 'Diff', 'Open', 'High', 'Low', 'Volume']] = df[['Close', 'Diff', 'Open', 'High', 'Low', 'Volume']].astype(int)
 
 df['Date'] = pd.to_datetime(df['Date'])
-
+df = df.drop_duplicates('Date') # unique by date
 df = df.sort_values(by=['Date'], ascending=True)
 
 # Sort columns to Open, High, Low, Volume, Close
